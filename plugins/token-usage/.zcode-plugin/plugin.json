@@ -1,0 +1,10 @@
+{
+  "name": "token-usage",
+  "version": "0.3.0",
+  "description": "Session token usage statistics powered by a local analyzer: totals, cache hit/miss, output tokens, breakdown by source (main turn / subagent / compact / web tools) and by model. Runs via SessionStart/Stop hooks and a /usage command with zero token overhead.",
+  "author": {
+    "name": "local-dev"
+  },
+  "commands": "commands",
+  "hooks": "./hooks/hooks.json"
+}

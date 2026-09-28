@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "process",
+            "command": "python",
+            "args": [
+              "${ZCODE_PLUGIN_ROOT}/hooks/token_usage_report.py",
+              "--session",
+              "${CLAUDE_SESSION_ID}",
+              "--dashboard"
+            ],
+            "timeoutMs": 30000,
+            "statusMessage": "正在生成 token 用量报告"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "process",
+            "command": "python",
+            "args": [
+              "${ZCODE_PLUGIN_ROOT}/hooks/token_usage_report.py",
+              "--session",
+              "${CLAUDE_SESSION_ID}",
+              "--dashboard"
+            ],
+            "timeoutMs": 30000,
+            "statusMessage": "正在更新 token 用量报告"
+          }
+        ]
+      }
+    ]
+  }
+}

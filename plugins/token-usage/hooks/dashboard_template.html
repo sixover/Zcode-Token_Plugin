@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Token 用量面板</title>
+<style>
+:root{--bg:#f5f5f7;--card:#ffffff;--text:#1d1d1f;--sec:#86868b;--line:rgba(0,0,0,0.07);--blue:#0071e3;--green:#34c759;--orange:#ff9f0a;--ob:#007aff}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang SC","Microsoft YaHei UI",sans-serif;-webkit-font-smoothing:antialiased;padding:34px 28px 44px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0}
+.sub{color:var(--sec);font-size:13px;margin-top:6px}
+.header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.ctl{display:flex;align-items:center;gap:20px}
+.seg{display:flex;background:rgba(0,0,0,.055);border-radius:11px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--text);font-size:13px;padding:6px 17px;border-radius:9px;cursor:pointer;font-family:inherit;transition:all .18s ease}
+.seg button.active{background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.14);font-weight:600}
+.switch-row{display:flex;align-items:center;gap:8px;color:var(--sec);font-size:12px;user-select:none}
+.tgl{position:relative;width:37px;height:22px;display:inline-block}
+.tgl input{opacity:0;width:0;height:0}
+.tgl span{position:absolute;inset:0;background:#d2d2d7;border-radius:22px;transition:.2s;cursor:pointer}
+.tgl span:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tgl input:checked+span{background:#34c759}
+.tgl input:checked+span:before{transform:translateX(15px)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px;margin-bottom:16px}
+.card{background:var(--card);border-radius:18px;box-shadow:0 2px 16px rgba(0,0,0,.05);padding:22px 24px}
+.block{margin-bottom:16px}
+.block h2{font-size:16px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.bd{color:var(--sec);font-size:12px;margin-bottom:16px}
+.k-title{color:var(--sec);font-size:13px;margin-bottom:9px}
+.k-value{font-size:27px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.k-sub{color:var(--sec);font-size:12px;margin-top:7px}
+.k-sub b{color:var(--text);font-weight:600}
+.legend{display:flex;gap:18px;font-size:12px;color:var(--sec);margin:0 0 6px;flex-wrap:wrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+svg{display:block;width:100%;height:auto}
+svg.hovering g.col{opacity:.32;transition:opacity .12s ease}
+svg.hovering g.col.on{opacity:1}
+.axis{fill:var(--sec);font-size:10px}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th{color:var(--sec);font-weight:500;text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+.note{color:#9a6b2f;background:#fdf6e9;border-radius:11px;padding:10px 14px;font-size:12px;margin-top:14px;display:none}
+.empty{color:var(--sec);font-size:13px;padding:26px 0;text-align:center}
+.tip{position:fixed;z-index:9;pointer-events:none;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,.16);border-radius:13px;padding:11px 14px;font-size:12px;display:none;min-width:172px}
+.tip .t-date{font-weight:700;font-size:12px;margin-bottom:7px}
+.tip .t-row{display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--sec);padding:2.5px 0}
+.tip .t-row b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>Token 用量面板</h1>
+      <div class="sub" id="gen"></div>
+    </div>
+    <div class="ctl">
+      <div class="switch-row"><label class="tgl"><input type="checkbox" id="auto"><span></span></label>自动刷新</div>
+      <div class="seg" id="seg">
+        <button data-days="7">近7天</button>
+        <button data-days="30">近30天</button>
+        <button data-days="0" class="active">全部</button>
+      </div>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card block">
+    <h2>每日 token 消耗</h2>
+    <div class="bd">鼠标悬停查看当日输入命中 / 输入未命中 / 输出的具体数量</div>
+    <div class="legend">
+      <span><span class="dot" style="background:#34c759"></span>输入命中（缓存）</span>
+      <span><span class="dot" style="background:#ff9f0a"></span>输入未命中（含缓存写入）</span>
+      <span><span class="dot" style="background:#007aff"></span>输出</span>
+    </div>
+    <div id="tokens"></div>
+  </div>
+  <div class="card block">
+    <h2>每日消费金额</h2>
+    <div class="bd">按 prices.json 单价估算，鼠标悬停查看当日金额与请求次数</div>
+    <div id="cost"></div>
+    <div class="note" id="pricenote"></div>
+  </div>
+  <div class="card block">
+    <h2>按模型汇总</h2>
+    <table id="models"></table>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+<script>
+const DATA = __DATA__;
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+function elNS(t,a){const e=document.createElementNS(NS,t);for(const k in (a||{}))e.setAttribute(k,a[k]);return e;}
+function el(t,a,x){const e=document.createElement(t);for(const k in (a||{}))e.setAttribute(k,a[k]);if(x!=null)e.textContent=x;return e;}
+function fmtN(n){return (n||0).toLocaleString('en-US');}
+function fmtMoney(v){return '¥'+((v>=1||v===0)?v.toFixed(2):v.toFixed(4));}
+function fmtAxis(v){if(v>=1e6)return (v/1e6).toFixed(1).replace(/\.0$/,'')+'M';if(v>=1e3)return Math.round(v/1e3)+'K';return String(Math.round(v));}
+function fmtAxisMoney(v){return '¥'+(v>=100?String(Math.round(v)):v>=1?v.toFixed(1):v.toFixed(2));}
+function shiftDate(iso,delta){const p=iso.split('-').map(Number);const d=new Date(p[0],p[1]-1,p[2]);d.setDate(d.getDate()+delta);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+let rangeDays = 0;
+function windowDays(){
+  if(!rangeDays) return DATA.days;
+  const cutoff = shiftDate(DATA.today, -(rangeDays-1));
+  return DATA.days.filter(d => d.date >= cutoff && d.date <= DATA.today);
+}
+function agg(days){
+  const t = {calls:0,in:0,cr:0,cw:0,out:0,cost:0,costKnown:false};
+  const models = {};
+  for(const d of days){
+    for(const m in d.models){
+      const s = d.models[m];
+      let b = models[m];
+      if(!b) b = models[m] = {calls:0,in:0,cr:0,cw:0,out:0,cost:0,priced:false};
+      b.calls+=s.calls; b.in+=s.in; b.cr+=s.cr; b.cw+=s.cw; b.out+=s.out;
+      if(s.priced){ b.priced=true; b.cost+=s.cost; t.cost+=s.cost; t.costKnown=true; }
+      t.calls+=s.calls; t.in+=s.in; t.cr+=s.cr; t.cw+=s.cw; t.out+=s.out;
+    }
+  }
+  return {t:t, models:models};
+}
+function dayTotals(d){
+  let cr=0, inp=0, out=0, cost=0, priced=false, calls=0;
+  for(const m in d.models){
+    const s = d.models[m];
+    cr += s.cr; inp += Math.max(s.in - s.cr - s.cw, 0); out += s.out; calls += s.calls;
+    if(s.priced){ cost += s.cost; priced = true; }
+  }
+  return {cr:cr, inp:inp, out:out, cost:cost, priced:priced, calls:calls};
+}
+function tipRow(color,label,val){
+  const r = el('div',{class:'t-row'});
+  const l = el('span');
+  if(color) l.appendChild(el('span',{class:'dot',style:'background:'+color}));
+  l.appendChild(document.createTextNode(label));
+  r.appendChild(l);
+  r.appendChild(el('b',null,val));
+  return r;
+}
+function showTip(e, d){
+  const dt = dayTotals(d);
+  const tip = $('tip');
+  tip.replaceChildren();
+  tip.appendChild(el('div',{class:'t-date'}, d.date + (d.date==='未知'?'':'')));
+  tip.appendChild(tipRow('#34c759','输入命中', fmtN(dt.cr)));
+  tip.appendChild(tipRow('#ff9f0a','输入未命中', fmtN(dt.inp)));
+  tip.appendChild(tipRow('#007aff','输出', fmtN(dt.out)));
+  tip.appendChild(tipRow(null,'请求次数', fmtN(dt.calls)));
+  if(dt.priced) tip.appendChild(tipRow('#0071e3','金额（估算）', fmtMoney(dt.cost)));
+  tip.style.display = 'block';
+  moveTip(e);
+}
+function moveTip(e){
+  const tip = $('tip'), r = tip.getBoundingClientRect();
+  let L = e.clientX + 16, T = e.clientY + 16;
+  if(L + r.width > window.innerWidth - 10) L = e.clientX - r.width - 16;
+  if(T + r.height > window.innerHeight - 10) T = e.clientY - r.height - 14;
+  tip.style.left = L + 'px'; tip.style.top = T + 'px';
+}
+function hideTip(){ $('tip').style.display = 'none'; }
+function barChart(days, seriesOf, axisFmt){
+  const W=1000, H=220, padT=12, padB=26;
+  const svg = elNS('svg',{viewBox:'0 0 '+W+' '+(H+padB)});
+  svg.style.width='100%'; svg.style.height='auto';
+  if(!days.length){
+    const t = elNS('text',{x:W/2,y:H/2,'text-anchor':'middle',fill:'#86868b','font-size':13});
+    t.textContent = '所选时间范围内暂无数据';
+    svg.appendChild(t);
+    return svg;
+  }
+  const per = days.map(d => { const ss = seriesOf(d); let tot=0; for(const s of ss) tot+=s.v; return {ss:ss, tot:tot, date:d.date}; });
+  let maxTotal = 0;
+  for(const p of per) if(p.tot > maxTotal) maxTotal = p.tot;
+  const scale = maxTotal ? (H-padT)/maxTotal : 0;
+  for(const v of [maxTotal, maxTotal/2, 0]){
+    const y = H - v*scale;
+    svg.appendChild(elNS('line',{x1:0,y1:y.toFixed(2),x2:W,y2:y.toFixed(2),stroke:'rgba(0,0,0,0.05)','stroke-width':1}));
+    const t = elNS('text',{x:2,y:(y-4).toFixed(2),fill:'#86868b','font-size':10,class:'axis'});
+    t.textContent = axisFmt(v);
+    svg.appendChild(t);
+  }
+  const step = W/Math.max(per.length,1), bw = Math.max(4, Math.min(44, step*0.6));
+  const k = Math.max(1, Math.ceil(per.length/10));
+  per.forEach((p,i) => {
+    const g = elNS('g',{class:'col'});
+    let y = H;
+    for(const s of p.ss){
+      const h = s.v*scale;
+      if(h > 0) g.appendChild(elNS('rect',{x:(i*step+(step-bw)/2).toFixed(2),y:(y-h).toFixed(2),width:bw.toFixed(2),height:h.toFixed(2),rx:3,fill:s.color}));
+      y -= h;
+    }
+    const hit = elNS('rect',{x:(i*step).toFixed(2),y:0,width:step.toFixed(2),height:(H+padB).toFixed(2),fill:'transparent'});
+    hit.addEventListener('mouseenter', e => { svg.classList.add('hovering'); g.classList.add('on'); showTip(e, days[i]); });
+    hit.addEventListener('mousemove', moveTip);
+    hit.addEventListener('mouseleave', () => { svg.classList.remove('hovering'); g.classList.remove('on'); hideTip(); });
+    g.appendChild(hit);
+    svg.appendChild(g);
+    if(i % k === 0){
+      const tx = elNS('text',{x:(i*step+step/2).toFixed(2),y:H+17,'text-anchor':'middle',fill:'#86868b','font-size':10});
+      tx.textContent = p.date.slice(5);
+      svg.appendChild(tx);
+    }
+  });
+  return svg;
+}
+function kpiCard(title, value, subHtml){
+  const c = el('div',{class:'card'});
+  c.appendChild(el('div',{class:'k-title'},title));
+  c.appendChild(el('div',{class:'k-value'},value));
+  if(subHtml){ const s = el('div',{class:'k-sub'}); s.innerHTML = subHtml; c.appendChild(s); }
+  return c;
+}
+function render(){
+  const days = windowDays();
+  const a = agg(days);
+  const t = a.t;
+  $('gen').textContent = '数据截至 ' + DATA.generatedAt + ' · 本地统计，统计过程零 token 消耗';
+  const kpis = $('kpis'); kpis.replaceChildren();
+  kpis.appendChild(kpiCard('消费金额（估算）', t.costKnown ? fmtMoney(t.cost) : '—', t.costKnown ? '按 prices.json 单价计算' : '未配置单价'));
+  kpis.appendChild(kpiCard('API 请求次数', fmtN(t.calls), Object.keys(a.models).length + ' 个模型'));
+  kpis.appendChild(kpiCard('输入 token（含缓存）', fmtN(t.in), '缓存命中 <b>' + (t.in ? (t.cr/t.in*100).toFixed(1) : '0.0') + '%</b>'));
+  kpis.appendChild(kpiCard('输出 token', fmtN(t.out), '非缓存输入 <b>' + fmtN(t.in - t.cr - t.cw) + '</b>'));
+  $('tokens').replaceChildren(barChart(days, d => {
+    const dt = dayTotals(d);
+    return [{v:dt.cr,color:'#34c759'},{v:dt.inp,color:'#ff9f0a'},{v:dt.out,color:'#007aff'}];
+  }, fmtAxis));
+  const costDiv = $('cost'), note = $('pricenote');
+  const anyPriced = days.some(d => dayTotals(d).priced);
+  if(anyPriced){
+    costDiv.replaceChildren(barChart(days, d => [{v:dayTotals(d).cost, color:'#0071e3'}], fmtAxisMoney));
+  } else {
+    costDiv.replaceChildren(el('div',{class:'empty'},'未配置单价，暂无金额数据'));
+  }
+  const unpriced = (DATA.unpricedModels || []).filter(m => a.models[m]);
+  note.style.display = unpriced.length ? 'block' : 'none';
+  note.textContent = '未配置单价的模型：' + unpriced.join('、') + '（金额不含这些模型）。编辑报告目录下 prices.json 后刷新本页生效。';
+  const tb = $('models'); tb.replaceChildren();
+  const thead = el('thead'); const trh = el('tr');
+  for(const h of ['模型','请求次数','输入（含缓存）','输入命中','输入未命中+写入','输出','命中率','金额（估算）']){
+    trh.appendChild(el('th', null, h));
+  }
+  thead.appendChild(trh); tb.appendChild(thead);
+  const tbody = el('tbody');
+  const rows = Object.keys(a.models).sort((x,y) => (a.models[y].in+a.models[y].out)-(a.models[x].in+a.models[x].out));
+  for(const m of rows){
+    const b = a.models[m];
+    const tr = el('tr');
+    for(const v of [m, fmtN(b.calls), fmtN(b.in), fmtN(b.cr), fmtN(b.cw + Math.max(b.in-b.cr-b.cw,0)), fmtN(b.out),
+                     (b.in ? (b.cr/b.in*100).toFixed(1)+'%' : '—'),
+                     b.priced ? fmtMoney(b.cost) : '—']){
+      tr.appendChild(el('td', null, String(v)));
+    }
+    tbody.appendChild(tr);
+  }
+  if(!rows.length){
+    const tr = el('tr'); const td = el('td',{colspan:'8'},'所选时间范围内暂无模型调用'); td.style.textAlign='center';
+    tr.appendChild(td); tbody.appendChild(tr);
+  }
+  tb.appendChild(tbody);
+}
+document.querySelectorAll('#seg button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#seg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rangeDays = Number(btn.dataset.days);
+    render();
+  });
+});
+let timer = null;
+$('auto').addEventListener('change', function(){
+  if(this.checked){ timer = setInterval(() => location.reload(), 30000); }
+  else if(timer){ clearInterval(timer); timer = null; }
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "dev-zcodeplugin-local",
+  "plugins": [
+    {
+      "name": "token-usage",
+      "source": "./token-usage",
+      "version": "0.3.0",
+      "description": "Session token usage statistics powered by a local analyzer: totals, cache hit/miss, output tokens, breakdown by source and by model. Zero token overhead.",
+      "displayName": "Token Usage",
+      "displayName_i18n": {
+        "zh-CN": "Token 用量统计"
+      },
+      "description_i18n": {
+        "zh-CN": "本地统计会话 token 用量：总量、缓存命中/未命中、输出、来源（主对话/子代理/压缩/联网）与模型占比。本地脚本实现，零 token 开销。"
+      },
+      "category": "developer-tools"
+    }
+  ]
+}
